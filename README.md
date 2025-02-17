@@ -1,4 +1,4 @@
-#AVR Dimmer Control System
+***AVR Dimmer Control System***
 This project implements a basic dimmer control system for an AC load using an AVR microcontroller. The system utilizes a TRIAC for dimming control based on zero-cross detection from the AC mains. The dimming level can be set by the user and ranges from 0 to 255, with 0 being completely off and 255 being maximum brightness.
 
 ###Features
