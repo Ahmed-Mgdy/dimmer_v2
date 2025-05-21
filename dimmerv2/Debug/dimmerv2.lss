@@ -3,31 +3,31 @@ dimmerv2.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         000001a6  00000000  00000000  00000094  2**1
+  0 .text         000001b2  00000000  00000000  00000094  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         00000002  00800060  000001a6  0000023a  2**0
+  1 .data         00000002  00800060  000001b2  00000246  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .bss          00000004  00800062  00800062  0000023c  2**0
+  2 .bss          00000004  00800062  00800062  00000248  2**0
                   ALLOC
-  3 .comment      00000030  00000000  00000000  0000023c  2**0
+  3 .comment      00000030  00000000  00000000  00000248  2**0
                   CONTENTS, READONLY
-  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  0000026c  2**2
+  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000278  2**2
                   CONTENTS, READONLY
-  5 .debug_aranges 00000060  00000000  00000000  000002a8  2**0
+  5 .debug_aranges 00000060  00000000  00000000  000002b4  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_info   00000741  00000000  00000000  00000308  2**0
+  6 .debug_info   00000741  00000000  00000000  00000314  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_abbrev 00000617  00000000  00000000  00000a49  2**0
+  7 .debug_abbrev 00000617  00000000  00000000  00000a55  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_line   00000340  00000000  00000000  00001060  2**0
+  8 .debug_line   00000352  00000000  00000000  0000106c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_frame  000000d0  00000000  00000000  000013a0  2**2
+  9 .debug_frame  000000d0  00000000  00000000  000013c0  2**2
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    00000385  00000000  00000000  00001470  2**0
+ 10 .debug_str    00000385  00000000  00000000  00001490  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_loc    000000f1  00000000  00000000  000017f5  2**0
+ 11 .debug_loc    000000f1  00000000  00000000  00001815  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 00000040  00000000  00000000  000018e6  2**0
+ 12 .debug_ranges 00000040  00000000  00000000  00001906  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -67,7 +67,7 @@ Disassembly of section .text:
   60:	10 e0       	ldi	r17, 0x00	; 0
   62:	a0 e6       	ldi	r26, 0x60	; 96
   64:	b0 e0       	ldi	r27, 0x00	; 0
-  66:	e6 ea       	ldi	r30, 0xA6	; 166
+  66:	e2 eb       	ldi	r30, 0xB2	; 178
   68:	f1 e0       	ldi	r31, 0x01	; 1
   6a:	02 c0       	rjmp	.+4      	; 0x70 <__do_copy_data+0x10>
   6c:	05 90       	lpm	r0, Z+
@@ -89,15 +89,15 @@ Disassembly of section .text:
   80:	a6 36       	cpi	r26, 0x66	; 102
   82:	b2 07       	cpc	r27, r18
   84:	e1 f7       	brne	.-8      	; 0x7e <.do_clear_bss_loop>
-  86:	0e 94 cb 00 	call	0x196	; 0x196 <main>
-  8a:	0c 94 d1 00 	jmp	0x1a2	; 0x1a2 <_exit>
+  86:	0e 94 d1 00 	call	0x1a2	; 0x1a2 <main>
+  8a:	0c 94 d7 00 	jmp	0x1ae	; 0x1ae <_exit>
 
 0000008e <__bad_interrupt>:
   8e:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
 
 00000092 <setup_timer1>:
 
-volatile uint8_t dimmingLevel = 250;  // Start at medium brightness
+volatile uint8_t dimmingLevel = 255;  // Start at medium brightness
 volatile uint32_t delayTime = 0;      // Computed delay time
 
 void setup_timer1() {
@@ -169,7 +169,7 @@ void dimmer_init(void) {
 
 void set_dimming_level(uint8_t level) {
 	dimmingLevel = level;
-  d6:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <__data_start>
+  d6:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <__DATA_REGION_ORIGIN__>
   da:	08 95       	ret
 
 000000dc <__vector_3>:
@@ -196,106 +196,117 @@ ISR(INT2_vect) {
   fc:	ff 93       	push	r31
 	//PORTC |= (1 << ZC_DETECT_PIN);  // Debug ON
 
+		if (dimmingLevel == 255) {
+  fe:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
+ 102:	8f 3f       	cpi	r24, 0xFF	; 255
+ 104:	11 f4       	brne	.+4      	; 0x10a <__vector_3+0x2e>
+			PORTD |=(1 << TRIAC_PIN);  // Ensure TRIAC is OFF
+ 106:	94 9a       	sbi	0x12, 4	; 18
+			//PORTC &= ~(1 << ZC_DETECT_PIN); // Debug OFF
+			return;  // Exit ISR, TRIAC won't fire
+ 108:	3b c0       	rjmp	.+118    	; 0x180 <__vector_3+0xa4>
+		}
 	// If dimming level is < 5, turn OFF TRIAC immediately
 	if (dimmingLevel < 5) {
-  fe:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__data_start>
- 102:	85 30       	cpi	r24, 0x05	; 5
- 104:	10 f4       	brcc	.+4      	; 0x10a <__vector_3+0x2e>
+ 10a:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
+ 10e:	85 30       	cpi	r24, 0x05	; 5
+ 110:	10 f4       	brcc	.+4      	; 0x116 <__vector_3+0x3a>
 		PORTD &= ~(1 << TRIAC_PIN);  // Ensure TRIAC is OFF
- 106:	94 98       	cbi	0x12, 4	; 18
+ 112:	94 98       	cbi	0x12, 4	; 18
 		//PORTC &= ~(1 << ZC_DETECT_PIN); // Debug OFF
 		return;  // Exit ISR, TRIAC won't fire
- 108:	35 c0       	rjmp	.+106    	; 0x174 <__vector_3+0x98>
+ 114:	35 c0       	rjmp	.+106    	; 0x180 <__vector_3+0xa4>
 	}
+	
 
 	// Compute delayTime
 	delayTime = ((uint16_t)((255 - dimmingLevel) * 260));
- 10a:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__data_start>
- 10e:	2f ef       	ldi	r18, 0xFF	; 255
- 110:	30 e0       	ldi	r19, 0x00	; 0
- 112:	28 1b       	sub	r18, r24
- 114:	31 09       	sbc	r19, r1
- 116:	44 e0       	ldi	r20, 0x04	; 4
- 118:	51 e0       	ldi	r21, 0x01	; 1
- 11a:	24 9f       	mul	r18, r20
- 11c:	c0 01       	movw	r24, r0
- 11e:	25 9f       	mul	r18, r21
- 120:	90 0d       	add	r25, r0
- 122:	34 9f       	mul	r19, r20
- 124:	90 0d       	add	r25, r0
- 126:	11 24       	eor	r1, r1
- 128:	a0 e0       	ldi	r26, 0x00	; 0
- 12a:	b0 e0       	ldi	r27, 0x00	; 0
- 12c:	80 93 62 00 	sts	0x0062, r24	; 0x800062 <__data_end>
- 130:	90 93 63 00 	sts	0x0063, r25	; 0x800063 <__data_end+0x1>
- 134:	a0 93 64 00 	sts	0x0064, r26	; 0x800064 <__data_end+0x2>
- 138:	b0 93 65 00 	sts	0x0065, r27	; 0x800065 <__data_end+0x3>
+ 116:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
+ 11a:	2f ef       	ldi	r18, 0xFF	; 255
+ 11c:	30 e0       	ldi	r19, 0x00	; 0
+ 11e:	28 1b       	sub	r18, r24
+ 120:	31 09       	sbc	r19, r1
+ 122:	44 e0       	ldi	r20, 0x04	; 4
+ 124:	51 e0       	ldi	r21, 0x01	; 1
+ 126:	24 9f       	mul	r18, r20
+ 128:	c0 01       	movw	r24, r0
+ 12a:	25 9f       	mul	r18, r21
+ 12c:	90 0d       	add	r25, r0
+ 12e:	34 9f       	mul	r19, r20
+ 130:	90 0d       	add	r25, r0
+ 132:	11 24       	eor	r1, r1
+ 134:	a0 e0       	ldi	r26, 0x00	; 0
+ 136:	b0 e0       	ldi	r27, 0x00	; 0
+ 138:	80 93 62 00 	sts	0x0062, r24	; 0x800062 <__data_end>
+ 13c:	90 93 63 00 	sts	0x0063, r25	; 0x800063 <__data_end+0x1>
+ 140:	a0 93 64 00 	sts	0x0064, r26	; 0x800064 <__data_end+0x2>
+ 144:	b0 93 65 00 	sts	0x0065, r27	; 0x800065 <__data_end+0x3>
 
 	// Apply delay before firing TRIAC
 	if (delayTime > 0) {
- 13c:	80 91 62 00 	lds	r24, 0x0062	; 0x800062 <__data_end>
- 140:	90 91 63 00 	lds	r25, 0x0063	; 0x800063 <__data_end+0x1>
- 144:	a0 91 64 00 	lds	r26, 0x0064	; 0x800064 <__data_end+0x2>
- 148:	b0 91 65 00 	lds	r27, 0x0065	; 0x800065 <__data_end+0x3>
- 14c:	89 2b       	or	r24, r25
- 14e:	8a 2b       	or	r24, r26
- 150:	8b 2b       	or	r24, r27
- 152:	51 f0       	breq	.+20     	; 0x168 <__vector_3+0x8c>
+ 148:	80 91 62 00 	lds	r24, 0x0062	; 0x800062 <__data_end>
+ 14c:	90 91 63 00 	lds	r25, 0x0063	; 0x800063 <__data_end+0x1>
+ 150:	a0 91 64 00 	lds	r26, 0x0064	; 0x800064 <__data_end+0x2>
+ 154:	b0 91 65 00 	lds	r27, 0x0065	; 0x800065 <__data_end+0x3>
+ 158:	89 2b       	or	r24, r25
+ 15a:	8a 2b       	or	r24, r26
+ 15c:	8b 2b       	or	r24, r27
+ 15e:	51 f0       	breq	.+20     	; 0x174 <__vector_3+0x98>
 		delay_us_timer1(delayTime);
- 154:	80 91 62 00 	lds	r24, 0x0062	; 0x800062 <__data_end>
- 158:	90 91 63 00 	lds	r25, 0x0063	; 0x800063 <__data_end+0x1>
- 15c:	a0 91 64 00 	lds	r26, 0x0064	; 0x800064 <__data_end+0x2>
- 160:	b0 91 65 00 	lds	r27, 0x0065	; 0x800065 <__data_end+0x3>
- 164:	0e 94 50 00 	call	0xa0	; 0xa0 <delay_us_timer1>
+ 160:	80 91 62 00 	lds	r24, 0x0062	; 0x800062 <__data_end>
+ 164:	90 91 63 00 	lds	r25, 0x0063	; 0x800063 <__data_end+0x1>
+ 168:	a0 91 64 00 	lds	r26, 0x0064	; 0x800064 <__data_end+0x2>
+ 16c:	b0 91 65 00 	lds	r27, 0x0065	; 0x800065 <__data_end+0x3>
+ 170:	0e 94 50 00 	call	0xa0	; 0xa0 <delay_us_timer1>
 	}
 
 	// Fire TRIAC with a longer pulse width (200µs)
 	PORTD |= (1 << TRIAC_PIN);
- 168:	94 9a       	sbi	0x12, 4	; 18
+ 174:	94 9a       	sbi	0x12, 4	; 18
 	delay_us_timer1(200);  // Use Timer1 for 200µs delay
- 16a:	88 ec       	ldi	r24, 0xC8	; 200
- 16c:	90 e0       	ldi	r25, 0x00	; 0
- 16e:	0e 94 50 00 	call	0xa0	; 0xa0 <delay_us_timer1>
+ 176:	88 ec       	ldi	r24, 0xC8	; 200
+ 178:	90 e0       	ldi	r25, 0x00	; 0
+ 17a:	0e 94 50 00 	call	0xa0	; 0xa0 <delay_us_timer1>
 	PORTD &= ~(1 << TRIAC_PIN);
- 172:	94 98       	cbi	0x12, 4	; 18
+ 17e:	94 98       	cbi	0x12, 4	; 18
 
 	//PORTC &= ~(1 << ZC_DETECT_PIN); // Debug OFF
 }
- 174:	ff 91       	pop	r31
- 176:	ef 91       	pop	r30
- 178:	bf 91       	pop	r27
- 17a:	af 91       	pop	r26
- 17c:	9f 91       	pop	r25
- 17e:	8f 91       	pop	r24
- 180:	7f 91       	pop	r23
- 182:	6f 91       	pop	r22
- 184:	5f 91       	pop	r21
- 186:	4f 91       	pop	r20
- 188:	3f 91       	pop	r19
- 18a:	2f 91       	pop	r18
- 18c:	0f 90       	pop	r0
- 18e:	0f be       	out	0x3f, r0	; 63
- 190:	0f 90       	pop	r0
- 192:	1f 90       	pop	r1
- 194:	18 95       	reti
+ 180:	ff 91       	pop	r31
+ 182:	ef 91       	pop	r30
+ 184:	bf 91       	pop	r27
+ 186:	af 91       	pop	r26
+ 188:	9f 91       	pop	r25
+ 18a:	8f 91       	pop	r24
+ 18c:	7f 91       	pop	r23
+ 18e:	6f 91       	pop	r22
+ 190:	5f 91       	pop	r21
+ 192:	4f 91       	pop	r20
+ 194:	3f 91       	pop	r19
+ 196:	2f 91       	pop	r18
+ 198:	0f 90       	pop	r0
+ 19a:	0f be       	out	0x3f, r0	; 63
+ 19c:	0f 90       	pop	r0
+ 19e:	1f 90       	pop	r1
+ 1a0:	18 95       	reti
 
-00000196 <main>:
+000001a2 <main>:
  #define F_CPU 16000000ul
 #include <avr/io.h>
 #include "dimmer.h"
 
 int main() {
 	dimmer_init();  // Initialize dimmer system
- 196:	0e 94 5f 00 	call	0xbe	; 0xbe <dimmer_init>
+ 1a2:	0e 94 5f 00 	call	0xbe	; 0xbe <dimmer_init>
 
-	uint8_t dimmingLevel = 0;  // Example dimming level (range 0-255)
+	uint8_t dimmingLevel =5;  // Example dimming level (range 0-255)
 	set_dimming_level(dimmingLevel);  // Set the dimming level
- 19a:	80 e0       	ldi	r24, 0x00	; 0
- 19c:	0e 94 6b 00 	call	0xd6	; 0xd6 <set_dimming_level>
- 1a0:	ff cf       	rjmp	.-2      	; 0x1a0 <main+0xa>
+ 1a6:	85 e0       	ldi	r24, 0x05	; 5
+ 1a8:	0e 94 6b 00 	call	0xd6	; 0xd6 <set_dimming_level>
+ 1ac:	ff cf       	rjmp	.-2      	; 0x1ac <main+0xa>
 
-000001a2 <_exit>:
- 1a2:	f8 94       	cli
+000001ae <_exit>:
+ 1ae:	f8 94       	cli
 
-000001a4 <__stop_program>:
- 1a4:	ff cf       	rjmp	.-2      	; 0x1a4 <__stop_program>
+000001b0 <__stop_program>:
+ 1b0:	ff cf       	rjmp	.-2      	; 0x1b0 <__stop_program>

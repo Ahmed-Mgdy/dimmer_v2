@@ -16,7 +16,7 @@
 #include "common_macros.h"
 #include "gpio.h"
 
-volatile uint8_t dimmingLevel = 250;  // Start at medium brightness
+volatile uint8_t dimmingLevel = 255;  // Start at medium brightness
 volatile uint32_t delayTime = 0;      // Computed delay time
 
 void setup_timer1() {
@@ -55,12 +55,18 @@ void set_dimming_level(uint8_t level) {
 ISR(INT2_vect) {
 	//PORTC |= (1 << ZC_DETECT_PIN);  // Debug ON
 
+		if (dimmingLevel == 255) {
+			PORTD |=(1 << TRIAC_PIN);  // Ensure TRIAC is OFF
+			//PORTC &= ~(1 << ZC_DETECT_PIN); // Debug OFF
+			return;  // Exit ISR, TRIAC won't fire
+		}
 	// If dimming level is < 5, turn OFF TRIAC immediately
 	if (dimmingLevel < 5) {
 		PORTD &= ~(1 << TRIAC_PIN);  // Ensure TRIAC is OFF
 		//PORTC &= ~(1 << ZC_DETECT_PIN); // Debug OFF
 		return;  // Exit ISR, TRIAC won't fire
 	}
+	
 
 	// Compute delayTime
 	delayTime = ((uint16_t)((255 - dimmingLevel) * 260));

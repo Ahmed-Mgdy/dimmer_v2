@@ -6,7 +6,5 @@ dimmer.c
 
 gpio.c
 
-lcd.c
-
 main.c
 
