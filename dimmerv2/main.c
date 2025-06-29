@@ -16,7 +16,7 @@
 int main() {
 	dimmer_init();  // Initialize dimmer system
 
-	uint8_t dimmingLevel =5;  // Example dimming level (range 0-255)
+	uint8_t dimmingLevel =5; // Example dimming level (range 0-255)
 	set_dimming_level(dimmingLevel);  // Set the dimming level
 
 	while (1) {

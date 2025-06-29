@@ -9,6 +9,7 @@
  * Author: Ahmed Magdy
  *
  *******************************************************************************/
+#define F_CPU 16000000ul
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "dimmer.h"
